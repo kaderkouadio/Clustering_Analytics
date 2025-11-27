@@ -1,0 +1,21 @@
+[
+  "Age",
+  "Customer_Seniority",
+  "Income",
+  "Kidhome",
+  "Teenhome",
+  "Recency",
+  "MntWines",
+  "MntFruits",
+  "MntMeatProducts",
+  "MntFishProducts",
+  "MntSweetProducts",
+  "MntGoldProds",
+  "NumDealsPurchases",
+  "NumWebPurchases",
+  "NumCatalogPurchases",
+  "NumStorePurchases",
+  "NumWebVisitsMonth",
+  "Education",
+  "Marital_Status"
+]

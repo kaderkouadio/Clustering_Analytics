@@ -1,0 +1,26 @@
+
+fastapi>= 0.121.2
+joblib >= 1.5.2
+jsonschema >= 4.25.1
+matplotlib >= 3.10.7
+numpy >= 2.3.4
+packaging >= 25.0
+pandas >= 2.3.3
+pillow >= 12.0.0
+pip >= 25.3
+plotly >= 6.4.0
+psycopg2 >= 2.9.11
+psycopg2-binary>=2.9.11
+pyarrow >= 21.0.0
+pydantic >= 2.12.4
+pydantic_core >= 2.41.5
+pydeck >= 0.9.1
+pyparsing >= 3.2.5
+referencing >= 0.37.0
+requests >= 2.32.5
+scikit-learn >= 1.7.2
+scipy >= 1.16.3
+seaborn >= 0.13.2
+SQLAlchemy >= 2.0.44
+uvicorn >= 0.38.0
+watchdog >= 6.0.0

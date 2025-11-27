@@ -1,0 +1,7 @@
+{
+  "kmeans_k": 4,
+  "classifier": "lr",
+  "cv_accuracy": 0.9787927358740138,
+  "test_accuracy": 0.9910714285714286,
+  "created_at": "2025-11-18T19:55:17.248172"
+}
