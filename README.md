@@ -190,7 +190,7 @@ API_BASE_URL=https://clustering-api-kader.onrender.com
 
 Liens déjà déployés :
 
-API + Swagger → https://clustering-api-kader.onrender.com/docs
+API + Swagger → https://clustering-api-kader.onrender.com
 
 Dashboard → https://clustering-dashboard-kader.streamlit.app
 

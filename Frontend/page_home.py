@@ -43,7 +43,7 @@ col1, col2, col3 = st.columns([1.8, 6, 2])
 
 with col1:
     st.image(
-        "https://raw.githubusercontent.com/kaderkouadio/Projet_clustering/main/Frontend/Images/profil.jpg",
+        "https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/main/Frontend/Images/profil.jpg",
         # "https://raw.githubusercontent.com/kaderkouadio/Projet_clustering/Frontend/Images/profil.jpg",
         width=140,
         caption="Koukou Kader KOUADIO"
@@ -86,7 +86,7 @@ c1, c2 = st.columns([2.2, 1])
 with c1:
     # st.image("https://raw.githubusercontent.com/kaderkouadio/Fullstacks_Analytics_Pipelines2/main/App_streamlit/Images/pipeline.png")
 
-    st.image("https://raw.githubusercontent.com/kaderkouadio/Projet_clustering/Frontend/Images/pipeline.png")
+    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/Frontend/Images/Pipelines.png")
 
 
 with c2:
@@ -108,7 +108,7 @@ c1, c2 = st.columns([2.2, 1])
 with c1:
     # st.image("https://raw.githubusercontent.com/kaderkouadio/Fullstacks_Analytics_Pipelines2/main/App_streamlit/Images/visualisation.jpeg")
 
-    st.image("https://raw.githubusercontent.com/kaderkouadio/Projet_clustering/Frontend/Images/pipeline.png")
+    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/Frontend/Images/Dataviz2.jpg")
 
 with c2:
     st.info("""
@@ -127,7 +127,7 @@ c1, c2 = st.columns([2.2, 1])
 with c1:
     # st.image("https://raw.githubusercontent.com/kaderkouadio/Fullstacks_Analytics_Pipelines2/main/App_streamlit/Images/streamlit3.jpeg")
 
-    st.image("https://raw.githubusercontent.com/kaderkouadio/Projet_clustering/Frontend/Images/pipeline.png")
+    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/Frontend/Images/Deployment.jpg")
 
 with c2:
     st.warning("""
@@ -219,7 +219,7 @@ else:
 
 
 st.markdown("### Test API FastAPI")
-api_url = st.text_input("URL de base", "http://localhost:8001", label_visibility="collapsed")
+api_url = st.text_input("URL de base", "https://clustering-analytics.onrender.com", label_visibility="collapsed")
 if st.button("Tester /health", type="primary", use_container_width=True):
     try:
         r = requests.get(f"{api_url.rstrip('/')}/health", timeout=5)
@@ -302,7 +302,7 @@ st.markdown(
         </p>
         <p>
             ℹ️ <strong>Note Docker :</strong> Si tu utilises Docker, 
-            configure <code>POSTGRES_*</code> et l’URL API dans ton 
+            configure <code>SQLite*</code> et l’URL API dans ton 
             <code>docker-compose.yml</code>.
         </p>
     </div>
