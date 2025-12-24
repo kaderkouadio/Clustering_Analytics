@@ -31,7 +31,7 @@ st.markdown("""
         Dashboard Fullstack Analytics Pipelines
     </h1>
     <p style="color:#e8f5e8; font-size:1.4rem; margin:10px 0 0;">
-        FastAPI • Docker • PostgreSQL • KMeans/CAH • PCA • Streamlit
+        FastAPI • Docker • SQLite • KMeans/CAH • PCA • Streamlit
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -91,7 +91,7 @@ with c1:
 
 with c2:
     st.success("""
-    **Stockage : PostgreSQL**
+    **Stockage : SQLite**
 
     Tables créées automatiquement :
     - `customers`
