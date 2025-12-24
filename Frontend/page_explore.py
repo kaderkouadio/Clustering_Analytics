@@ -124,7 +124,7 @@ def mode_segmentation():
             st.stop()
     else:
         # api_url = st.text_input("URL FastAPI", value=os.getenv("FASTAPI_URL", "http://localhost:8001"), key="api_seg") 
-        api_url = st.text_input("URL FastAPI", value=os.getenv("FASTAPI_URL", "https://clustering-analytics.onrender.com/docs"), key="api_seg") 
+        api_url = st.text_input("URL FastAPI", value=os.getenv("FASTAPI_URL", "https://clustering-analytics.onrender.com"), key="api_seg") 
         if st.button("Charger depuis l'API", type="primary"):
             try:
                 with st.spinner("Connexion API..."):
