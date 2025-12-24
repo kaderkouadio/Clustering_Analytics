@@ -1,10 +1,9 @@
 
 # --- Framework API ---
-fastapi==0.115.0
-pydantic==2.9.2
-pydantic-settings==2.5.2
-uvicorn[standard]==0.31.0
-requests==2.32.3
+fastapi>=0.115.0
+pydantic>=2.9.2
+pydantic-settings>=2.5.2
+uvicorn>=2.32.3
 
 # --- Data Science & ML ---
 numpy>=1.26.0
@@ -14,9 +13,9 @@ scipy>=1.13.0
 joblib>=1.4.0
 
 # --- Base de données ---
-SQLAlchemy==2.0.35
+SQLAlchemy>=2.0.35
 # psycopg2-binary est suffisant si vous n'utilisez pas de fonctionnalités système spécifiques de Postgres
-psycopg2-binary==2.9.9
+psycopg2-binary>=2.9.9
 
 # --- Visualisation (Optionnel pour l'API, nécessaire si vous générez des graphes côté serveur) ---
 matplotlib>=3.9.0
