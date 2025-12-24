@@ -21,6 +21,16 @@ import pandas as pd
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 from sqlalchemy import inspect, text, func
+
+
+import sys
+from pathlib import Path
+
+# Ajoute la racine du projet au sys.path pour que "Api" soit reconnu
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+sys.path.append(str(BASE_DIR))
+
+
 from Api.database import engine , Base , get_db
 from sqlalchemy.orm import Session
 from Api.models import Prediction, ClientData, PCAResult
