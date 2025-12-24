@@ -6,6 +6,9 @@ import json
 from datetime import datetime
 from utils import load_all_artifacts, get_data_dir
 
+# C'EST CETTE LIGNE QUI MANQUE :
+artifacts = load_all_artifacts()
+
 # ==================================================================
 # STYLE & TITRE
 # ==================================================================
@@ -181,12 +184,12 @@ if submitted:
 
     st.success("Payload complet généré (toutes les features requises)")
     st.json(payload, expanded=False)
-
+    # === Payload complet généré ici ===
     with st.spinner("Analyse en cours..."):
         predicted_cluster = None
         confidence = None
 
-        # === PRÉDICTION ===
+        # === PRÉDICTION API ===
         if mode == "API FastAPI (recommandé)":
             try:
                 endpoint = f"{api_url.rstrip('/')}/predict-cluster"
@@ -201,25 +204,58 @@ if submitted:
                     st.code(r.text)
                 st.stop()
 
-        else:  # Mode local
-            artifacts = load_all_artifacts(get_data_dir())
-            if not artifacts.get("classifier") and not artifacts.get("kmeans"):
-                st.error("Modèles locaux manquants")
-                st.stop()
+        # # === ENREGISTREMENT ===
+        # try:
+        #     save_endpoint = f"{api_url.rstrip('/')}/save-prediction"
+        #     save_payload = {
+        #         "payload": payload,
+        #         "predicted_cluster": int(predicted_cluster) if predicted_cluster is not None else -1,
+        #         "confidence": float(confidence) if confidence is not None else 0.0,
+        #         "timestamp": datetime.utcnow().isoformat(),
+        #         "pc1": None,
+        #         "pc2": None
+        #     }
+        #     req = requests.post(save_endpoint, json=save_payload, timeout=10)
+        #     req.raise_for_status()
+        #     resp = req.json()
 
-            df_client = pd.DataFrame([payload])
-            preprocessor = artifacts["preprocessor"]
-            X = preprocessor.transform(df_client)
+        #     if resp.get("status") == "success":
+        #         st.success("📌 Prédiction enregistrée dans la base de données.")
+        #     else:
+        #         st.warning("⚠ Impossible d’enregistrer dans la base.")
+        # except Exception as e:
+        #     st.warning(f"⚠ Erreur lors de l’enregistrement : {e}")
 
-            if artifacts.get("classifier"):
-                pred = artifacts["classifier"].predict(X)[0]
-                proba = artifacts["classifier"].predict_proba(X)[0]
-                predicted_cluster = int(pred)
-                confidence = float(proba.max())
+
+        # === ENREGISTREMENT ===
+        try:
+            from datetime import datetime, timezone
+            
+            save_endpoint = f"{api_url.rstrip('/')}/save-prediction"
+            save_payload = {
+                "payload": payload,
+                "predicted_cluster": int(predicted_cluster) if predicted_cluster is not None else -1,
+                "confidence": float(confidence) if confidence is not None else 0.0,
+                # Correction ici : Utilisation de timezone.utc
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "pc1": None,
+                "pc2": None
+            }
+            
+            req = requests.post(save_endpoint, json=save_payload, timeout=10)
+            req.raise_for_status()
+            resp = req.json()
+
+            if resp.get("status") == "success":
+                st.success("📌 Prédiction enregistrée dans la base de données.")
             else:
-                predicted_cluster = int(artifacts["kmeans"].predict(X)[0])
-                confidence = 0.98  # approximation
+                st.warning("⚠ Problème lors de l'enregistrement côté serveur.")
+                
+        except Exception as e:
+            st.warning(f"⚠ Erreur de connexion à la base de données : {e}")
 
+
+            
         # === AFFICHAGE RÉSULTAT ===
         if predicted_cluster is not None:
             segment = SEGMENTS.get(predicted_cluster, SEGMENTS[3])
@@ -247,13 +283,49 @@ if submitted:
                 if segment.get("warning"):
                     st.error(f"ALERTE : {segment['warning']}")
 
-            # === OPTION : Afficher le client dans le nuage PCA (si artefacts locaux) ===
+            # # === OPTION : Afficher le client dans le nuage PCA (si artefacts locaux) ===
+            # if mode == "Modèle local (artefacts)":
+            #     try:
+            #         pca_coords = artifacts.get("pca_coords")
+            #         pca_model = artifacts.get("pca")
+            #         if pca_coords is not None and pca_model is not None:
+            #             client_pca = pca_model.transform(X)
+            #             df_plot = pd.DataFrame(pca_coords)
+            #             df_client_plot = pd.DataFrame({
+            #                 "PC1": [client_pca[0][0]],
+            #                 "PC2": [client_pca[0][1]],
+            #                 "cluster": [predicted_cluster]
+            #             })
+
+            #             import plotly.express as px
+            #             fig = px.scatter(df_plot, x="PC1", y="PC2", color="cluster", opacity=0.5,
+            #                              color_discrete_map={k: v["color"] for k, v in SEGMENTS.items()})
+            #             fig.add_scatter(x=df_client_plot["PC1"], y=df_client_plot["PC2"],
+            #                             mode="markers", marker=dict(size=20, color=segment["color"], symbol="star"),
+            #                             name="Nouveau client")
+
+            #             st.plotly_chart(fig, use_container_width=True)
+            #     except:
+            #         pass
+
+            # === OPTION : Afficher le client dans le nuage PCA ===
             if mode == "Modèle local (artefacts)":
                 try:
+                    # 1. Récupération des outils nécessaires
                     pca_coords = artifacts.get("pca_coords")
                     pca_model = artifacts.get("pca")
-                    if pca_coords is not None and pca_model is not None:
-                        client_pca = pca_model.transform(X)
+                    preprocessor = artifacts.get("preprocessor")
+                    features_list = artifacts.get("features") # La liste des colonnes dans l'ordre
+
+                    if all(v is not None for v in [pca_coords, pca_model, preprocessor, features_list]):
+                        # 2. Mise en forme du DataFrame d'entrée (ordre strict des colonnes)
+                        X_input = pd.DataFrame([payload])[features_list]
+                        
+                        # 3. Pipeline de transformation : Scaling -> PCA
+                        X_scaled = preprocessor.transform(X_input)
+                        client_pca = pca_model.transform(X_scaled)
+
+                        # 4. Préparation du graphique
                         df_plot = pd.DataFrame(pca_coords)
                         df_client_plot = pd.DataFrame({
                             "PC1": [client_pca[0][0]],
@@ -261,16 +333,25 @@ if submitted:
                             "cluster": [predicted_cluster]
                         })
 
+                        # 5. Visualisation Plotly
                         import plotly.express as px
-                        fig = px.scatter(df_plot, x="PC1", y="PC2", color="cluster", opacity=0.5,
-                                         color_discrete_map={k: v["color"] for k, v in SEGMENTS.items()})
+                        
+                        # Fond : Nuage de points global (plus petit et transparent)
+                        fig = px.scatter(df_plot, x="PC1", y="PC2", color="cluster", 
+                                         opacity=0.3,
+                                         color_discrete_map={str(k): v["color"] for k, v in SEGMENTS.items()},
+                                         title="Positionnement du nouveau client dans l'espace PCA")
+                        
+                        # Premier plan : Le client prédit (en forme d'étoile géante)
                         fig.add_scatter(x=df_client_plot["PC1"], y=df_client_plot["PC2"],
-                                        mode="markers", marker=dict(size=20, color=segment["color"], symbol="star"),
-                                        name="Nouveau client")
+                                        mode="markers", 
+                                        marker=dict(size=25, color=segment["color"], symbol="star", 
+                                                    line=dict(width=2, color="white")),
+                                        name="Ce client")
 
                         st.plotly_chart(fig, use_container_width=True)
-                except:
-                    pass
+                except Exception as e:
+                    st.info("La visualisation PCA n'a pas pu être générée (vérifiez les artefacts).")
 
 
 

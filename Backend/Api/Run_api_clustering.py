@@ -19,7 +19,7 @@ PORT_HOST = 8001       # port local
 PORT_CONTAINER = 80    # port exposé dans le conteneur
 
 # Chemin local vers le dossier Data
-DATA_FOLDER = "C:/Users/kkade/Videos/Mes_Applications/Projet_clustering/Data"
+DATA_FOLDER = "C:/Users/kkade/Videos/Mes_Applications/Clustering_Analytics/Data"
 # Chemin dans le conteneur
 CONTAINER_FOLDER = "/Data"
 
@@ -87,9 +87,14 @@ def main():
     if is_port_in_use(PORT_HOST):
         raise RuntimeError(f"🚫 Le port {PORT_HOST} est déjà utilisé.")
 
-    # Supprime le conteneur si existant
+    # # Supprime le conteneur si existant
+    # if container_exists(CONTAINER_NAME):
+    #     print("🗑 Suppression de l’ancien conteneur...")
+    #     run_command(f"docker rm -f {CONTAINER_NAME}")
     if container_exists(CONTAINER_NAME):
         print("🗑 Suppression de l’ancien conteneur...")
+        # Ajout de l'arrêt préalable pour une suppression propre
+        run_command(f"docker stop {CONTAINER_NAME}", check=False)
         run_command(f"docker rm -f {CONTAINER_NAME}")
 
     # Supprime l'image précédente si existante

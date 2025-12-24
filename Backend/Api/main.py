@@ -1,6 +1,4 @@
 
-####################################################
-
 """
 API de Clustering Client – Version C (PRO)
 ------------------------------------------
@@ -15,7 +13,6 @@ API de Clustering Client – Version C (PRO)
 ✅ Swagger UI ultra lisible
 ✅ Zéro 422 / 500 en production
 """
-
 import os
 import json
 import joblib
@@ -23,15 +20,21 @@ import logging
 import pandas as pd
 from typing import List, Dict, Any, Optional
 from pathlib import Path
-
-
+from sqlalchemy import inspect, text, func
+from Api.database import engine , Base , get_db
+from sqlalchemy.orm import Session
+from Api.models import Prediction, ClientData, PCAResult
+# router = APIRouter()
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from pydantic import BaseModel
 from fastapi.responses import JSONResponse
-from fastapi import FastAPI, HTTPException, Request, Query, Body
-from fastapi import FastAPI, HTTPException, Request, Query
+from fastapi import FastAPI, HTTPException, Request, Query, Body , Depends
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime, timezone
 
+
+# Crée les tables si elles n'existent pas dans le fichier .db
+Base.metadata.create_all(bind=engine)
 
 # -------------------------------------------------------------------------
 # CONFIG LOGGING
@@ -42,6 +45,11 @@ logger = logging.getLogger(__name__)
 
 
 # # http://localhost:8001/docs
+
+# uvicorn Api.main:app --host 0.0.0.0 --port 8001 --reload
+
+# http://127.0.0.1:8001/docs
+
 
 
 # -------------------------------------------------------------------------
@@ -129,7 +137,7 @@ Disponible sur **`/docs`** après démarrage de l’API.
 """
 
 app = FastAPI(
-    title="🔥 API Segmentation(Clustering) Marketing",
+    title="🔥 API Segmentation Marketing",
     description=api_description,
     version="1.0.0",
     contact={
@@ -158,7 +166,7 @@ app = FastAPI(
 # -------------------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Peut être restreint en production
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -167,7 +175,7 @@ app.add_middleware(
 # -------------------------------------------------------------------------
 # 🧩 Modèle de données principal
 # -------------------------------------------------------------------------
-class ClientData(BaseModel):
+class ClientSchema(BaseModel):
     """
     Structure standardisée des données client, utilisée pour :
       - la prédiction supervisée (Random Forest)
@@ -311,6 +319,40 @@ def health_check():
         }
     }
 
+@app.post("/save-prediction", tags=["Prédiction"], summary="Sauvegarde une prédiction en DB")
+def save_prediction(data: dict, db: Session = Depends(get_db)):
+    try:
+        # --- 1. PLACER LA SÉCURITÉ ICI ---
+        cluster_raw = data.get("predicted_cluster")
+        # Si cluster_raw est None, on met -1, sinon on convertit en int
+        cluster_val = int(cluster_raw) if cluster_raw is not None else -1
+        
+        # Utilisation de timezone.utc pour éviter le warning
+        now = datetime.now(timezone.utc)
+        
+        # --- 2. UTILISER cluster_val ICI ---
+        pred = Prediction(
+            payload=data.get("payload"),
+            # payload_json=json.dumps(data.get("payload")),
+            predicted_cluster=cluster_val, # On utilise la variable sécurisée
+            confidence=float(data.get("confidence", 0.0)),
+            timestamp=now,
+            pc1=data.get("pc1"),
+            pc2=data.get("pc2")
+        )
+        
+        db.add(pred)
+        db.commit()
+        db.refresh(pred)
+        return {"status": "success", "id": pred.id, "timestamp": now.isoformat()}
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Erreur sauvegarde SQLite : {e}")
+        # On affiche l'erreur réelle dans les logs pour débugger
+        raise HTTPException(status_code=500, detail=f"Erreur base de données : {str(e)}")
+
+
 
 @app.get("/metadata", summary="Métadonnées complètes du modèle", tags=["Santé & Métadonnées"])
 def get_metadata():
@@ -355,31 +397,31 @@ def get_pca_coords(limit: int = Query(1000, ge=1, le=5000)):
     df = pd.read_csv(PCA_COORDS_PATH).head(limit)
     return {"status": "success", "data": df.to_dict(orient="records")}
 
-@app.get("/segments/stats", summary="Statistiques par segment (revenu moyen + effectif)", tags=["Visualisation"])
-def segment_stats():
-    """Statistiques agrégées sécurisées – fonctionne même si Income est absent"""
-    if not PCA_COORDS_PATH.exists():
-        raise HTTPException(status_code=404, detail="Fichier pca_coords.csv introuvable")
 
-    df = pd.read_csv(PCA_COORDS_PATH)
+@app.get("/segments/stats", summary="Statistiques par segment (Données réelles)", tags=["Visualisation"])
+def segment_stats(db: Session = Depends(get_db)):
+    """Calcule les stats en temps réel depuis la base de données SQL."""
+    try:
+        # Requête SQL : GROUP BY cluster_kmeans, COUNT(*), AVG(income)
+        stats = db.query(
+            ClientData.cluster_kmeans.label("cluster"),
+            func.count(ClientData.id).label("count"),
+            func.avg(ClientData.income).label("avg_income")
+        ).group_by(ClientData.cluster_kmeans).all()
 
-    if "cluster" not in df.columns:
-        raise HTTPException(status_code=500, detail="Colonne 'cluster' manquante dans pca_coords.csv")
+        # Transformation en format dictionnaire pour le JSON
+        result = [
+            {
+                "cluster": s.cluster if s.cluster is not None else -1,
+                "count": s.count,
+                "avg_income": round(s.avg_income, 2) if s.avg_income else 0
+            }
+            for s in stats
+        ]
 
-    # Comptage par cluster
-    counts = df["cluster"].value_counts().sort_index().reset_index()
-    counts.columns = ["cluster", "count"]
-
-    # Revenu moyen (si présent)
-    if "Income" in df.columns and pd.api.types.is_numeric_dtype(df["Income"]):
-        incomes = df.groupby("cluster")["Income"].mean().round(2).reset_index()
-        incomes.columns = ["cluster", "avg_income"]
-        result = counts.merge(incomes, on="cluster", how="left")
-    else:
-        result = counts
-        result["avg_income"] = None
-
-    return {"status": "success", "data": result.to_dict(orient="records")}
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur SQL : {str(e)}")
 
 
 # ===========================================================================
@@ -445,7 +487,7 @@ def get_segment_info(cluster: int) -> Dict[str, Any]:
 
 @app.post("/predict-cluster", response_model=PredictClusterResponse,
           summary="Prédiction supervisée d’un seul client", tags=["Prédiction"])
-def predict_cluster(req: ClientData):
+def predict_cluster(req: ClientSchema):
     """
     Prédit le cluster d’un client avec un classifieur supervisé (LogisticRegression)
     → Très haute précision grâce à l'entraînement sur les vrais labels KMeans
@@ -470,28 +512,39 @@ def predict_cluster(req: ClientData):
 
 
 @app.post("/cluster", 
-          summary="Clustering KMeans non supervisé (batch) → avec infos métier complètes", 
+          summary="Clustering KMeans (batch) avec persistance optionnelle", 
           tags=["Prédiction"])
 async def assign_cluster(
-    clients: List[ClientData] = Body(..., embed=True)
+    clients: List[ClientSchema] = Body(..., embed=True),
+    save_to_db: bool = Query(False, description="Si True, met à jour la colonne cluster_kmeans dans SQLite"),
+    db: Session = Depends(get_db)
 ):
     """
-    Prend une liste de clients → retourne :
-    - Le cluster prédit
-    - Le libellé métier
-    - La couleur
-    - La stratégie marketing
-    → Idéal pour alimentation directe d’un dashboard
+    Réalise un clustering KMeans sur une liste de clients et enrichit la réponse avec des données métier.
+
+    Args:
+        clients (List[ClientSchema]): Liste des objets clients validés par Pydantic.
+        save_to_db (bool, optional): Flag pour déclencher la mise à jour de la table 'client_data'. Defaults to False.
+        db (Session): Session SQLAlchemy injectée par FastAPI.
+
+    Returns:
+        dict: Statut de l'opération, nombre de clients traités et détails (segment, couleur, stratégie) pour chaque client.
+    
+    Raises:
+        HTTPException: 500 si les modèles ne sont pas chargés ou si le calcul échoue.
     """
+    # Vérification de la présence des artefacts ML
     if not kmeans_model or not preprocessor:
-        raise HTTPException(status_code=500, detail="KMeans ou préprocesseur non chargé")
+        logger.error("Tentative d'accès au clustering sans modèles chargés.")
+        raise HTTPException(status_code=500, detail="KMeans ou préprocesseur non disponible")
 
     if not clients:
-        raise HTTPException(status_code=400, detail="La liste de clients est vide")
+        raise HTTPException(status_code=400, detail="La liste de clients fournie est vide.")
 
+    # Conversion de la liste Pydantic en DataFrame pandas pour le preprocessing
     df = pd.DataFrame([c.dict() for c in clients])
 
-    # Nettoyage robuste des catégories inconnues (comme avant)
+    # Nettoyage des variables catégorielles (Gestion des valeurs hors-dictionnaire)
     allowed_edu = ["Basic", "2n Cycle", "Graduation", "Master", "PhD"]
     allowed_marital = ["Single", "Married", "Divorced", "Together", "Widow"]
 
@@ -499,15 +552,32 @@ async def assign_cluster(
     df["Marital_Status"] = df["Marital_Status"].astype(str).apply(lambda x: x if x in allowed_marital else "Other")
 
     try:
-        X = preprocessor.transform(df)
-        raw_clusters = kmeans_model.predict(X)
-    except Exception as e:
-        logger.error(f"Erreur lors du preprocessing/prediction KMeans : {e}")
-        raise HTTPException(status_code=500, detail="Erreur lors du clustering")
+        # Transformation des données (Scaling + Encoding) et Prédiction
+        X_transformed = preprocessor.transform(df)
+        raw_clusters = kmeans_model.predict(X_transformed)
+        
+        # --- LOGIQUE DE PERSISTANCE ---
+        if save_to_db:
+            logger.info(f"💾 Mise à jour de la base de données pour {len(clients)} clients...")
+            for i, cluster_id in enumerate(raw_clusters):
+                c_data = clients[i].dict()
+                # On utilise l'ID pour une mise à jour précise
+                if "id" in c_data and c_data["id"] is not None:
+                    db.query(ClientData).filter(ClientData.id == c_data["id"]).update(
+                        {"cluster_kmeans": int(cluster_id)}
+                    )
+            db.commit()
+            logger.info("✅ Mise à jour SQLite terminée avec succès.")
 
-    # Construction de la réponse riche
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Erreur lors du cycle clustering/update : {str(e)}")
+        raise HTTPException(status_code=500, detail="Erreur interne lors du traitement des données")
+
+    # Construction de la réponse enrichie avec la logique métier
     results = []
     for i, cluster_id in enumerate(raw_clusters.tolist()):
+        # get_segment_info est une fonction utilitaire renvoyant le label, la couleur, etc.
         segment = get_segment_info(cluster_id)
         results.append({
             "client_index": i,
@@ -523,14 +593,13 @@ async def assign_cluster(
     return {
         "status": "success",
         "total_clients": len(clients),
-        "model": "KMeans (unsupervised)",
-        "k": kmeans_model.n_clusters,
+        "updated_in_db": save_to_db,
         "results": results
     }
 
 @app.post("/apply-pca", summary="Projection PCA en temps réel sur de nouveaux clients", tags=["Visualisation"])
 async def apply_pca(
-    clients: List[ClientData] = Body(..., embed=True),
+    clients: List[ClientSchema] = Body(..., embed=True),
     n_components: int = Query(2, ge=1, le=50, description="Nombre de composantes principales à retourner")
 ):
     """
@@ -569,6 +638,115 @@ async def apply_pca(
     except Exception as e:
         logger.error(f"Erreur dans /apply-pca : {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de la projection PCA")
+    
+
+
+# -----------------------------
+#  SCHEMA Pydantic d'entrée
+# -----------------------------
+class PredictionInput(BaseModel):
+    payload: dict
+    predicted_cluster: int
+    confidence: float | None = None
+    pc1: float | None = None
+    pc2: float | None = None
+    timestamp: str
+
+
+
+class SavePayload(BaseModel):
+    payload: dict
+    predicted_cluster: int
+    confidence: float
+    timestamp: str
+    pc1: float | None = None
+    pc2: float | None = None
+
+
+
+@app.post("/save-prediction", tags=["Prédiction"])
+def save_prediction(data: dict, db: Session = Depends(get_db)):
+    """
+    Sauvegarde la prédiction envoyée depuis Streamlit.
+    """
+    try:
+        pred = Prediction(
+            payload_json=json.dumps(data.get("payload")),
+            predicted_cluster=int(data.get("predicted_cluster")),
+            confidence=float(data.get("confidence")),
+            timestamp=datetime.utcnow(),
+            pc1=data.get("pc1"),
+            pc2=data.get("pc2")
+        )
+
+        db.add(pred)
+        db.commit()
+        db.refresh(pred)
+
+        return {"status": "success", "message": "Prediction saved", "id": pred.id}
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# 3. UNIQUE ROUTE TEST-DB (Version SQLite)
+@app.get("/test-db", summary="Test de la base SQLite", tags=["Santé & Métadonnées"])
+def test_database():
+    result = {"connection": None, "tables": [], "db_type": "SQLite"}
+    try:
+        with engine.connect() as conn:
+            # Correction pour SQLite (datetime au lieu de NOW)
+            now = conn.execute(text("SELECT datetime('now')")).scalar()
+            result["connection"] = f"✅ Connecté ! Heure SQLite : {now}"
+            
+            inspector = inspect(engine)
+            result["tables"] = inspector.get_table_names()
+    except Exception as e:
+        result["connection"] = f"❌ Échec : {str(e)}"
+    return result
+
+
+@app.get("/test-db", summary="Test de connexion et état des tables", tags=["Santé & Métadonnées"])
+def test_database():
+    """
+    Test complet de la base de données SQLite :
+    - Connexion
+    - Tables existantes
+    - Vérification de la table 'clients' et nombre de lignes
+    """
+    result = {"connection": None, "tables": [], "clients": None}
+
+    # Test de connexion
+    try:
+        with engine.connect() as conn:
+            now = conn.execute(text("SELECT NOW()")).scalar()
+            result["connection"] = f"✅ Connexion réussie ! Horodatage : {now}"
+    except Exception as e:
+        result["connection"] = f"❌ Échec de connexion : {e}"
+        return result
+
+    # Inspecter les tables
+    inspector = inspect(engine)
+    tables = inspector.get_table_names()
+    result["tables"] = tables
+
+    # Vérifier la table clients
+    if "clients" in tables:
+        try:
+            with engine.connect() as conn:
+                count = conn.execute(text("SELECT COUNT(*) FROM clients")).scalar()
+                result["clients"] = {
+                    "exists": True,
+                    "rows_count": count
+                }
+        except Exception as e:
+            result["clients"] = {"exists": True, "error": str(e)}
+    else:
+        result["clients"] = {"exists": False}
+
+    return result
+
     
 # =============================================================================
 # Lancement local

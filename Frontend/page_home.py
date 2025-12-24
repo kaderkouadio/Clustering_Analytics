@@ -43,8 +43,8 @@ col1, col2, col3 = st.columns([1.8, 6, 2])
 
 with col1:
     st.image(
-        # "https://raw.githubusercontent.com/kaderkouadio/Fullstacks_Analytics_Pipelines2/main/App_streamlit/Images/profil.jpg",
-        "https://raw.githubusercontent.com/kaderkouadio/Projet_clustering/Frontend/Images/profil.jpg",
+        "https://raw.githubusercontent.com/kaderkouadio/Projet_clustering/main/Frontend/Images/profil.jpg",
+        # "https://raw.githubusercontent.com/kaderkouadio/Projet_clustering/Frontend/Images/profil.jpg",
         width=140,
         caption="Koukou Kader KOUADIO"
     )

@@ -1,197 +1,56 @@
-
-
 # ============================================================
-# database.py
-# Création DB + tables automatiquement
-
-# pip install psycopg2
+# database.py - Projet Clustering Analytics
+# Gestion de la persistance des données avec SQLite
 # ============================================================
 
-# import os
-# import psycopg2
-# from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-# from sqlalchemy import create_engine, Column, Integer, Float, String
-# from sqlalchemy.orm import declarative_base, sessionmaker
-
-# # -----------------------------
-# # Configuration PostgreSQL
-# # -----------------------------
-# POSTGRES_USER = os.getenv("POSTGRES_USER", "KOUADIO_KADER")
-# POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "Nantessou88")
-# POSTGRES_DB = os.getenv("POSTGRES_DB", "clustering_db")
-# POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
-# POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
-
-# # -----------------------------
-# # Création DB si elle n'existe pas
-# # -----------------------------
-# def create_database_if_not_exists():
-#     try:
-#         conn = psycopg2.connect(
-#             dbname="postgres",
-#             user=POSTGRES_USER,
-#             password=POSTGRES_PASSWORD,
-#             host=POSTGRES_HOST,
-#             port=POSTGRES_PORT
-#         )
-#         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-#         cursor = conn.cursor()
-#         cursor.execute(f"SELECT 1 FROM pg_database WHERE datname='{POSTGRES_DB}';")
-#         if not cursor.fetchone():
-#             cursor.execute(f"CREATE DATABASE {POSTGRES_DB};")
-#             print(f"Base '{POSTGRES_DB}' créée avec succès.")
-#         else:
-#             print(f"Base '{POSTGRES_DB}' existe déjà.")
-#         cursor.close()
-#         conn.close()
-#     except Exception as e:
-#         print(f"Erreur lors de la création de la base : {e}")
-
-# # ------------------------------------------------------------
-# # Création de la base avant SQLAlchemy
-# # ------------------------------------------------------------
-# create_database_if_not_exists()
-
-# # ------------------------------------------------------------
-# # Chaîne de connexion SQLAlchemy
-# # ------------------------------------------------------------
-# DATABASE_URL = (
-#     f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@"
-#     f"{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-# )
-
-# # ------------------------------------------------------------
-# # Moteur SQLAlchemy
-# # ------------------------------------------------------------
-# engine = create_engine(
-#     DATABASE_URL,
-#     echo=False,   # True pour debug SQL
-#     future=True
-# )
-
-# # ------------------------------------------------------------
-# # Session
-# # ------------------------------------------------------------
-# SessionLocal = sessionmaker(
-#     bind=engine,
-#     autocommit=False,
-#     autoflush=False,
-#     future=True
-# )
-
-# # ------------------------------------------------------------
-# # Base pour les modèles
-# # ------------------------------------------------------------
-# Base = declarative_base()
-
-
-# # -----------------------------
-# # Modèle Client
-# # -----------------------------
-# class Client(Base):
-#     __tablename__ = "clients"
-    
-#     id = Column(Integer, primary_key=True, index=True)
-#     Age = Column(Float, nullable=False)
-#     Customer_Seniority = Column(Float, nullable=False)
-#     Income = Column(Float, nullable=False)
-#     Kidhome = Column(Integer, nullable=False)
-#     Teenhome = Column(Integer, nullable=False)
-#     Recency = Column(Integer, nullable=False)
-#     MntWines = Column(Float, nullable=False)
-#     MntFruits = Column(Float, nullable=False)
-#     MntMeatProducts = Column(Float, nullable=False)
-#     MntFishProducts = Column(Float, nullable=False)
-#     MntSweetProducts = Column(Float, nullable=False)
-#     MntGoldProds = Column(Float, nullable=False)
-#     NumDealsPurchases = Column(Integer, nullable=False)
-#     NumWebPurchases = Column(Integer, nullable=False)
-#     NumCatalogPurchases = Column(Integer, nullable=False)
-#     NumStorePurchases = Column(Integer, nullable=False)
-#     NumWebVisitsMonth = Column(Integer, nullable=False)
-#     Education = Column(String, nullable=True)
-#     Marital_Status = Column(String, nullable=True)
-#     cluster = Column(Integer, nullable=True)
-
-# # -----------------------------
-# # Création automatique des tables
-# # -----------------------------
-# def create_tables():
-#     Base.metadata.create_all(engine)
-#     print("Toutes les tables ont été créées (si elles n'existaient pas).")
-
-# create_tables()
-
-
-# # ------------------------------------------------------------
-# # Dépendance FastAPI
-# # ------------------------------------------------------------
-# def get_db():
-#     """Ouvre une session DB et la ferme automatiquement."""
-#     db = SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
-
-
-
-##############################################################
-
-
-# ============================================================
-# database.py
-# Création DB + tables automatiquement (si nécessaire)
-## PostgreSQL hébergé sur Render
-# ============================================================
-
+import logging
 import os
-from sqlalchemy import create_engine, Column, Integer, Float, String
+from pathlib import Path
+from sqlalchemy import create_engine, inspect, text, Column, Integer, Float, String
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 # ------------------------------------------------------------
-# Configuration PostgreSQL via variables d'environnement Render
+# 1. Configuration des Logs
 # ------------------------------------------------------------
-POSTGRES_USER = os.getenv("POSTGRES_USER", "clustering_db_b60a_user")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "5GO6AO4Io5PpcIV2ebHsxVjSBqhHNirO")
-POSTGRES_DB = os.getenv("POSTGRES_DB", "clustering_db")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST", "dpg-d4k9mee3jp1c738mrqvg-a.frankfurt-postgres.render.com")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("database")
 
 # ------------------------------------------------------------
-# Chaîne de connexion SQLAlchemy
+# 2. Configuration SQLite
 # ------------------------------------------------------------
-DATABASE_URL = (
-    f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@"
-    f"{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-)
+DB_FILE = "clustering_analytics.db"
+# Utilisation de Path pour une gestion propre des chemins (Windows/Linux)
+DB_PATH = Path(__file__).parent / DB_FILE
+DATABASE_URL = f"sqlite:///{DB_PATH}"
+
+# Vérification/Création du fichier physique
+if DB_PATH.exists():
+    logger.info(f"✔️ Base SQLite détectée : {DB_PATH}")
+else:
+    logger.info(f"📌 Initialisation d'une nouvelle base SQLite : {DB_PATH}")
 
 # ------------------------------------------------------------
-# Moteur SQLAlchemy
+# 3. Moteur & Session SQLAlchemy
 # ------------------------------------------------------------
 engine = create_engine(
     DATABASE_URL,
-    echo=False,   # True pour debug SQL
+    connect_args={"check_same_thread": False}, # Requis pour SQLite + FastAPI
+    echo=False,
     future=True
 )
 
-# ------------------------------------------------------------
-# Session
-# ------------------------------------------------------------
 SessionLocal = sessionmaker(
     bind=engine,
-    autocommit=False,
     autoflush=False,
+    autocommit=False,
+    expire_on_commit=False,
     future=True
 )
 
-# ------------------------------------------------------------
-# Base pour les modèles
-# ------------------------------------------------------------
 Base = declarative_base()
 
 # ------------------------------------------------------------
-# Modèle Client
+# 4. Modèle Client (Table Principale)
 # ------------------------------------------------------------
 class Client(Base):
     __tablename__ = "clients"
@@ -219,21 +78,45 @@ class Client(Base):
     cluster = Column(Integer, nullable=True)
 
 # ------------------------------------------------------------
-# Création automatique des tables
+# 5. Initialisation Automatique du Schéma
 # ------------------------------------------------------------
 def create_tables():
-    Base.metadata.create_all(engine)
-    print("Toutes les tables ont été créées (si elles n'existaient pas).")
-
-create_tables()
+    """Crée les tables avec un monitoring détaillé dans les logs."""
+    inspector = inspect(engine)
+    existing_tables = inspector.get_table_names()
+    
+    # Création des tables manquantes
+    Base.metadata.create_all(bind=engine)
+    
+    declared_tables = Base.metadata.tables.keys()
+    for table in declared_tables:
+        if table in existing_tables:
+            logger.info(f"✔️ Table opérationnelle : {table}")
+        else:
+            logger.info(f"🆕 Table créée avec succès : {table}")
 
 # ------------------------------------------------------------
-# Dépendance FastAPI
+# 6. Dépendance FastAPI
 # ------------------------------------------------------------
 def get_db():
-    """Ouvre une session DB et la ferme automatiquement."""
+    """Générateur de session pour les endpoints de l'API."""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+# Initialisation au chargement du module
+if __name__ == "database" or __name__ == "__main__":
+    create_tables()
+
+# ------------------------------------------------------------
+# 7. Test de Connexion (Exécution directe)
+# ------------------------------------------------------------
+if __name__ == "__main__":
+    try:
+        with engine.connect() as conn:
+            version = conn.execute(text("SELECT sqlite_version()")).scalar()
+            logger.info(f"🚀 Test réussi ! SQLite version : {version}")
+    except Exception as e:
+        logger.error(f"❌ Échec de connexion : {e}")

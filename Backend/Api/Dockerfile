@@ -1,59 +1,52 @@
 
-#####################################
-# =============================================
-# Dockerfile ULTRA OPTIMISÉ – Clustering API
-# Taille finale : ~98 Mo | Build : <25s
-# Backend clustering + PostgreSQL
-# =============================================
-#####################################
-
-
+# # =============================================
+# # Dockerfile ULTRA OPTIMISÉ – Clustering API
+# # Taille finale : ~98 Mo | Build : <25s
+# # Backend clustering + SQLite
+# # =============================================
 
 FROM python:3.11-slim AS base
 
-# Config système
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-WORKDIR /Api
+WORKDIR /Backend/Api
 
-# Dépendances système (uniquement ce qu’il faut pour scikit-learn + joblib)
+# Dépendances système minimales pour scikit-learn
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Étape de build des dépendances (cache maximal)
+# --- Stage Builder ---
 FROM base AS builder
+RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential
 COPY requirements.txt .
-RUN pip install --user --no-warn-script-location -r requirements.txt
+# Installation dans /install pour faciliter la copie vers l'image finale
+RUN pip install --prefix=/install --no-warn-script-location -r requirements.txt
+RUN pip install --prefix=/install uvicorn[standard] httptools uvloop
 
-# Installer toutes les dépendances
-RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir uvicorn[standard]
-
-# Image finale ultra-légère
+# --- Stage Final ---
 FROM base AS final
+# Copie des packages depuis le builder
+COPY --from=builder /install /usr/local
 
-# Copie des packages installés par l'utilisateur
-COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
+# Création du dossier Data pour SQLite (avant le passage en non-root)
+RUN mkdir -p /app/Data && chmod 777 /app/Data
 
-# Copie du code
+# Copie du code source
 COPY . .
 
-# Sécurité : user non-root
-RUN adduser --disabled-password --gecos '' appuser
+# Sécurité
+RUN adduser --disabled-password --gecos '' appuser && chown -R appuser:appuser /app
 USER appuser
 
 EXPOSE 80
 
-# Healthcheck intégré
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:80/health', timeout=3)" || exit 1
+# Healthcheck (plus simple pour éviter la dépendance 'requests')
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD python -c "import socket; s = socket.socket(); s.connect(('localhost', 80))" || exit 1
 
-# Lancement optimisé
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80", "--workers", "4", "--loop", "uvloop", "--http", "httptools"]
+# Lancement (Ajustez le chemin vers main:app selon votre arborescence réelle)
+CMD ["uvicorn", "Backend.Api.main:app", "--host", "0.0.0.0", "--port", "80", "--workers", "2"]
