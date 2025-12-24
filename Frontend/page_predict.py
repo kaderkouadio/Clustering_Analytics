@@ -39,8 +39,11 @@ if mode == "API FastAPI (recommandé)":
     with col2:
         api_url = st.text_input(
             "URL de l'API FastAPI",
-            value=st.session_state.get("api_url", "http://localhost:8001"),
-            help="Ex: http://localhost:8001"
+            # value=st.session_state.get("api_url", "http://localhost:8001"),
+            # help="Ex: http://localhost:8001"
+            value=st.session_state.get("api_url", "https://clustering-analytics.onrender.com"),
+            help="Ex: https://clustering-analytics.onrender.com"
+
         ).strip().rstrip("/")
         st.session_state.api_url = api_url
         if not api_url:

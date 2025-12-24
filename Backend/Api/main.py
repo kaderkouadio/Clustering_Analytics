@@ -173,10 +173,16 @@ app = FastAPI(
 
 # -------------------------------------------------------------------------
 # 🌐 Configuration CORS (Frontend : Streamlit, React, etc.)
+## Gestion des CORS (Cross-Origin Resource Sharing)
 # -------------------------------------------------------------------------
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"], # En production, on peut remplacer "*" par l'URL de votre Streamlit
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

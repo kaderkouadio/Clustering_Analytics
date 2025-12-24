@@ -249,7 +249,7 @@ C’est exactement le type de projet qui fait dire aux recruteurs : « On l’em
 
 ## Liens Utiles
 
-API Live + Documentation → https://clustering-api-kader.onrender.com/docs
+API Live + Documentation → https://clustering-analytics.onrender.com/docs
 
 Dashboard Interactif → https://clustering-dashboard-kader.streamlit.app
 
