@@ -86,7 +86,7 @@ c1, c2 = st.columns([2.2, 1])
 with c1:
     # st.image("https://raw.githubusercontent.com/kaderkouadio/Fullstacks_Analytics_Pipelines2/main/App_streamlit/Images/pipeline.png")
 
-    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/Frontend/Images/Pipelines.png")
+    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/main/Frontend/Images/Pipelines.png")
 
 
 with c2:
@@ -108,7 +108,7 @@ c1, c2 = st.columns([2.2, 1])
 with c1:
     # st.image("https://raw.githubusercontent.com/kaderkouadio/Fullstacks_Analytics_Pipelines2/main/App_streamlit/Images/visualisation.jpeg")
 
-    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/Frontend/Images/Dataviz2.jpg")
+    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/main/Frontend/Images/Dataviz2.jpg")
 
 with c2:
     st.info("""
@@ -127,7 +127,7 @@ c1, c2 = st.columns([2.2, 1])
 with c1:
     # st.image("https://raw.githubusercontent.com/kaderkouadio/Fullstacks_Analytics_Pipelines2/main/App_streamlit/Images/streamlit3.jpeg")
 
-    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/Frontend/Images/Deployment.jpg")
+    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/main/Frontend/Images/Deployment.jpg")
 
 with c2:
     st.warning("""

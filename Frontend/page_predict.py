@@ -207,29 +207,6 @@ if submitted:
                     st.code(r.text)
                 st.stop()
 
-        # # === ENREGISTREMENT ===
-        # try:
-        #     save_endpoint = f"{api_url.rstrip('/')}/save-prediction"
-        #     save_payload = {
-        #         "payload": payload,
-        #         "predicted_cluster": int(predicted_cluster) if predicted_cluster is not None else -1,
-        #         "confidence": float(confidence) if confidence is not None else 0.0,
-        #         "timestamp": datetime.utcnow().isoformat(),
-        #         "pc1": None,
-        #         "pc2": None
-        #     }
-        #     req = requests.post(save_endpoint, json=save_payload, timeout=10)
-        #     req.raise_for_status()
-        #     resp = req.json()
-
-        #     if resp.get("status") == "success":
-        #         st.success("📌 Prédiction enregistrée dans la base de données.")
-        #     else:
-        #         st.warning("⚠ Impossible d’enregistrer dans la base.")
-        # except Exception as e:
-        #     st.warning(f"⚠ Erreur lors de l’enregistrement : {e}")
-
-
         # === ENREGISTREMENT ===
         try:
             from datetime import datetime, timezone
@@ -285,31 +262,6 @@ if submitted:
 
                 if segment.get("warning"):
                     st.error(f"ALERTE : {segment['warning']}")
-
-            # # === OPTION : Afficher le client dans le nuage PCA (si artefacts locaux) ===
-            # if mode == "Modèle local (artefacts)":
-            #     try:
-            #         pca_coords = artifacts.get("pca_coords")
-            #         pca_model = artifacts.get("pca")
-            #         if pca_coords is not None and pca_model is not None:
-            #             client_pca = pca_model.transform(X)
-            #             df_plot = pd.DataFrame(pca_coords)
-            #             df_client_plot = pd.DataFrame({
-            #                 "PC1": [client_pca[0][0]],
-            #                 "PC2": [client_pca[0][1]],
-            #                 "cluster": [predicted_cluster]
-            #             })
-
-            #             import plotly.express as px
-            #             fig = px.scatter(df_plot, x="PC1", y="PC2", color="cluster", opacity=0.5,
-            #                              color_discrete_map={k: v["color"] for k, v in SEGMENTS.items()})
-            #             fig.add_scatter(x=df_client_plot["PC1"], y=df_client_plot["PC2"],
-            #                             mode="markers", marker=dict(size=20, color=segment["color"], symbol="star"),
-            #                             name="Nouveau client")
-
-            #             st.plotly_chart(fig, use_container_width=True)
-            #     except:
-            #         pass
 
             # === OPTION : Afficher le client dans le nuage PCA ===
             if mode == "Modèle local (artefacts)":
