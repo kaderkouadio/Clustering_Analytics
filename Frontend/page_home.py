@@ -85,7 +85,7 @@ st.markdown("<h2 style='text-align:center; color:#228B22;'>Phase 1 • Pipeline 
 c1, c2 = st.columns([2.2, 1])
 with c1:
 
-    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/main/Frontend/Images/Pipelines.png")
+    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/main/Frontend/Images/Pipelines.png", width=600)
 
 
 with c2:
@@ -106,7 +106,7 @@ st.markdown("<h2 style='text-align:center; color:#228B22;'>Phase 2 • Analyse &
 c1, c2 = st.columns([2.2, 1])
 with c1:
 
-    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/main/Frontend/Images/Dataviz2.jpg")
+    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/main/Frontend/Images/Dataviz2.jpg", width=600)
 
 with c2:
     st.info("""
@@ -124,7 +124,7 @@ st.markdown("<h2 style='text-align:center; color:#228B22;'>Phase 3 • Modèle &
 c1, c2 = st.columns([2.2, 1])
 with c1:
 
-    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/main/Frontend/Images/Deployment.jpg")
+    st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/main/Frontend/Images/Deployment.jpg", width=600)
 
 with c2:
     st.warning("""
