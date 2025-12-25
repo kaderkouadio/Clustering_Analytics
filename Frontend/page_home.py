@@ -214,38 +214,9 @@ if pca_path.exists():
 else:
     st.info("📁 Aucun aperçu PCA disponible — fichier `pca_coords.csv` manquant.")
 
-
-# st.markdown("### Test API FastAPI")
-# import requests
-# import streamlit as st
-
-# # ... votre code précédent ...
-
-# api_url= "https://clustering-analytics.onrender.com"
-
-# if st.button("Vérifier la connexion à l'API"):
-#     try:
-#         response = requests.get(f"{api_url}/") # Teste la racine ou /docs
-#         if response.status_code == 200:
-#             st.success("API en ligne !")
-#         else:
-#             st.warning(f"L'API répond avec le code : {response.status_code}")
-#     except:
-#         st.error("L'API est en cours de réveil ou inaccessible. Attendez 30 secondes et réessayez.")
-# api_url = st.text_input("URL de base", "https://clustering-analytics.onrender.com", label_visibility="collapsed")
-# if st.button("Tester /health", type="primary", use_container_width=True):
-#     try:
-#         r = requests.get(f"{api_url.rstrip('/')}/health", timeout=5)
-#         if r.status_code == 200:
-#             st.success("API en ligne !")
-#             st.json(r.json())
-#         else:
-#             st.error(f"Status {r.status_code}")
-#     except Exception as e:
-#         st.error(f"API hors ligne : {e}")
 st.markdown("### 🛠 Diagnostic de Connexion")
 
-# Utilisation d'une fonction pour centraliser les appels
+# 1. Configuration de l'URL
 def check_api(url, endpoint):
     target = f"{url.rstrip('/')}/{endpoint.lstrip('/')}"
     try:
@@ -253,40 +224,60 @@ def check_api(url, endpoint):
         return r
     except Exception as e:
         return str(e)
-
 api_url = st.text_input("URL de l'API", value="https://clustering-analytics.onrender.com")
 
-col1, col2 = st.columns(2)
-
-with col1:
-    if st.button("🚀 Lancer le Diagnostic"):
-        res = check_api(api_url, "/health")
-        if isinstance(res, requests.Response) and res.status_code == 200:
-            data = res.json()
-            if data.get("status") == "Online":
-                st.success(f"✅ {data.get('message')}")
-                # Affiche l'état des artefacts en colonnes compactes
-                st.write("**État des composants :**")
-                st.json(data.get("artifacts"))
-            else:
-                st.warning("⚠️ API en ligne mais en mode dégradé.")
-        else:
-            st.error("❌ API injoignable. (Vérifiez le déploiement Render)")
-
-with col2:
+# 2. Bouton d'action unique
+if st.button("🚀 Lancer le Diagnostic", use_container_width=True):
     res = check_api(api_url, "/health")
+    
     if isinstance(res, requests.Response) and res.status_code == 200:
         data = res.json()
-        st.success("API en ligne")
-        
-        # Affichage élégant des composants
+        status = data.get("status")
+        # On récupère les composants (dictionnaire)
         arts = data.get("artifacts", {})
+
+
+        total_composants = len(arts)
+        composants_ok = sum(1 for v in arts.values() if v is True)
+
+        # 1. Gestion des bannières de statut
+        if composants_ok == total_composants:
+        # if status == "Online":
+            st.success(f"✅ **Système Opérationnel** : {data.get('message', 'Tous les services sont prêts.')}")
+        else:
+            st.warning("⚠️ **Mode Dégradé** : Certains composants critiques ne sont pas chargés.")
+
+        st.write("**État des modules ML :**")
+        
+        # 2. Affichage des Metrics (Colonnes)
+        # On crée les colonnes dynamiquement
         cols = st.columns(len(arts))
-        for i, (name, status) in enumerate(arts.items()):
-            cols[i].metric(label=name.capitalize(), value="✅" if status else "❌")
+        
+        for i, (name, is_active) in enumerate(arts.items()):
+            label_name = name.replace("_", " ").capitalize()
+            
+            if is_active:
+                cols[i].metric(
+                    label=label_name, 
+                    value="Actif", 
+                    delta="Opérationnel", 
+                    delta_color="normal" # Vert
+                )
+            else:
+                cols[i].metric(
+                    label=label_name, 
+                    value="HS", 
+                    delta="OFF", 
+                    delta_color="inverse" # Rouge
+                )
+
+        # 3. Le JSON est relégué tout en bas, caché dans un menu
+        with st.expander("🛠 Voir les logs techniques"):
+            st.json(data)
+            
     else:
-        st.error("L'API ne répond pas")
-# ============================================================
+        st.error("❌ **Serveur Injoignable** : Vérifiez votre connexion ou réveillez l'instance Render.")
+
 # NAVIGATION
 # ============================================================
 st.markdown("---")
