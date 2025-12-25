@@ -35,6 +35,7 @@ from Api.database import engine , Base , get_db
 from sqlalchemy.orm import Session
 from Api.models import Prediction, ClientData, PCAResult
 # router = APIRouter()
+from fastapi.responses import RedirectResponse
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from fastapi.responses import JSONResponse
@@ -298,6 +299,12 @@ async def global_exception_handler(request: Request, exc: Exception):
 # 🌡️ Santé & Métadonnées
 # =============================================================================
 
+
+@app.get("/", include_in_schema=False)
+async def root():
+    """Redirige automatiquement vers la documentation Swagger"""
+    return RedirectResponse(url="/docs")
+
 @app.get("/health", summary="État de santé de l'API", tags=["Santé & Métadonnées"])
 def health_check():
     """
@@ -326,7 +333,7 @@ def health_check():
     global_status = all([preprocessor, classifier, kmeans_model, pca_model])
 
     return {
-        "status": "ok" if global_status else "degraded",
+        "status": "Online", "message": "API de Clustering Analytics opérationnelle." if global_status else "degraded",
         "artifacts": {
             "preprocessor": bool(preprocessor),   # Chargement des transformations
             "classifier": bool(classifier),       # Modèle supervisé

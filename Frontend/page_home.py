@@ -84,7 +84,6 @@ st.markdown("<h2 style='text-align:center; color:#228B22;'>Phase 1 • Pipeline 
 
 c1, c2 = st.columns([2.2, 1])
 with c1:
-    # st.image("https://raw.githubusercontent.com/kaderkouadio/Fullstacks_Analytics_Pipelines2/main/App_streamlit/Images/pipeline.png")
 
     st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/main/Frontend/Images/Pipelines.png")
 
@@ -106,7 +105,6 @@ st.markdown("<h2 style='text-align:center; color:#228B22;'>Phase 2 • Analyse &
 
 c1, c2 = st.columns([2.2, 1])
 with c1:
-    # st.image("https://raw.githubusercontent.com/kaderkouadio/Fullstacks_Analytics_Pipelines2/main/App_streamlit/Images/visualisation.jpeg")
 
     st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/main/Frontend/Images/Dataviz2.jpg")
 
@@ -125,7 +123,6 @@ st.markdown("<h2 style='text-align:center; color:#228B22;'>Phase 3 • Modèle &
 
 c1, c2 = st.columns([2.2, 1])
 with c1:
-    # st.image("https://raw.githubusercontent.com/kaderkouadio/Fullstacks_Analytics_Pipelines2/main/App_streamlit/Images/streamlit3.jpeg")
 
     st.image("https://raw.githubusercontent.com/kaderkouadio/Clustering_Analytics/main/Frontend/Images/Deployment.jpg")
 
@@ -218,19 +215,66 @@ else:
     st.info("📁 Aucun aperçu PCA disponible — fichier `pca_coords.csv` manquant.")
 
 
-st.markdown("### Test API FastAPI")
-api_url = st.text_input("URL de base", "https://clustering-analytics.onrender.com", label_visibility="collapsed")
-if st.button("Tester /health", type="primary", use_container_width=True):
-    try:
-        r = requests.get(f"{api_url.rstrip('/')}/health", timeout=5)
-        if r.status_code == 200:
-            st.success("API en ligne !")
-            st.json(r.json())
-        else:
-            st.error(f"Status {r.status_code}")
-    except Exception as e:
-        st.error(f"API hors ligne : {e}")
+# st.markdown("### Test API FastAPI")
+# import requests
+# import streamlit as st
 
+# # ... votre code précédent ...
+
+# api_url= "https://clustering-analytics.onrender.com"
+
+# if st.button("Vérifier la connexion à l'API"):
+#     try:
+#         response = requests.get(f"{api_url}/") # Teste la racine ou /docs
+#         if response.status_code == 200:
+#             st.success("API en ligne !")
+#         else:
+#             st.warning(f"L'API répond avec le code : {response.status_code}")
+#     except:
+#         st.error("L'API est en cours de réveil ou inaccessible. Attendez 30 secondes et réessayez.")
+# api_url = st.text_input("URL de base", "https://clustering-analytics.onrender.com", label_visibility="collapsed")
+# if st.button("Tester /health", type="primary", use_container_width=True):
+#     try:
+#         r = requests.get(f"{api_url.rstrip('/')}/health", timeout=5)
+#         if r.status_code == 200:
+#             st.success("API en ligne !")
+#             st.json(r.json())
+#         else:
+#             st.error(f"Status {r.status_code}")
+#     except Exception as e:
+#         st.error(f"API hors ligne : {e}")
+st.markdown("### 🛠 Diagnostic de Connexion")
+
+# Utilisation d'une fonction pour centraliser les appels
+def check_api(url, endpoint):
+    target = f"{url.rstrip('/')}/{endpoint.lstrip('/')}"
+    try:
+        r = requests.get(target, timeout=10)
+        return r
+    except Exception as e:
+        return str(e)
+
+api_url = st.text_input("URL de l'API", value="https://clustering-analytics.onrender.com")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("Tester la Racine (/)"):
+        res = check_api(api_url, "/")
+        if isinstance(res, requests.Response):
+            st.write(f"Code: {res.status_code}")
+            st.success("Serveur joignable")
+        else:
+            st.error(f"Erreur : {res}")
+
+with col2:
+    if st.button("Tester la Route (/health)"):
+        # On teste avec une limite de 1 pour ne pas charger le réseau
+        res = check_api(api_url, "/health?limit=1")
+        if isinstance(res, requests.Response) and res.status_code == 200:
+            st.success("Route health active !")
+        else:
+            st.warning("health non disponible ou route mal configurée.")
 # ============================================================
 # NAVIGATION
 # ============================================================

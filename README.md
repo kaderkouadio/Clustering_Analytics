@@ -51,8 +51,8 @@ Objectifs principaux :
   - Design premium, interactivité totale, état des artefacts en temps réel
 
 **Livrables** :
-- API déployée : `https://clustering-api-kader.onrender.com/docs`
-- Dashboard live : `https://clustering-dashboard-kader.streamlit.app`
+- API déployée : `https://clustering-analytics.onrender.com`
+- Dashboard live : `https://clusteringanalytics-bykaderkouadio.streamlit.app`
 - Artefacts ML + base SQLite fonctionnelle
 
 **Contexte des phases précédentes** :  
@@ -129,15 +129,14 @@ Phase 3 → Dashboard analytique & visualisation PCA
 - VSCode (recommandé)
 - Git & GitHub
 - Compte Render (gratuit)
-- (Optionnel) PostgreSQL local ou via Docker
+- (Optionnel) SQLite local ou via Docker
 
 ### Étapes d’Installation
 
 1. **Cloner le dépôt**
    ```bash
-   git clone https://github.com/kaderkouadio/Projet_clustering.git
    
-   cd Projet_clustering
+   cd Clustering_Analytics
 
 
 
@@ -184,7 +183,7 @@ API → Web Service (Python)
 Dashboard → Web Service (Streamlit)
 Variables d’environnement:
 
-API_BASE_URL=https://clustering-api-kader.onrender.com
+API_BASE_URL=https://clustering-analytics.onrender.com
 
 ---
 
@@ -192,7 +191,7 @@ Liens déjà déployés :
 
 API + Swagger → https://clustering-api-kader.onrender.com
 
-Dashboard → https://clustering-dashboard-kader.streamlit.app
+Dashboard → https://clusteringanalytics-bykaderkouadio.streamlit.app
 
 ---
 
@@ -249,11 +248,10 @@ C’est exactement le type de projet qui fait dire aux recruteurs : « On l’em
 
 ## Liens Utiles
 
-API Live + Documentation → https://clustering-analytics.onrender.com/docs
+API Live + Documentation → https://clustering-analytics.onrender.com
 
-Dashboard Interactif → https://clustering-dashboard-kader.streamlit.app
+Dashboard Interactif → https://clusteringanalytics-bykaderkouadio.streamlit.app
 
-Code source complet → https://github.com/kaderkouadio/Clustering_Analytics
 
 ---
 
