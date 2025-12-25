@@ -259,22 +259,33 @@ api_url = st.text_input("URL de l'API", value="https://clustering-analytics.onre
 col1, col2 = st.columns(2)
 
 with col1:
-    if st.button("Tester la Racine (/)"):
-        res = check_api(api_url, "/")
-        if isinstance(res, requests.Response):
-            st.write(f"Code: {res.status_code}")
-            st.success("Serveur joignable")
+    if st.button("🚀 Lancer le Diagnostic"):
+        res = check_api(api_url, "/health")
+        if isinstance(res, requests.Response) and res.status_code == 200:
+            data = res.json()
+            if data.get("status") == "Online":
+                st.success(f"✅ {data.get('message')}")
+                # Affiche l'état des artefacts en colonnes compactes
+                st.write("**État des composants :**")
+                st.json(data.get("artifacts"))
+            else:
+                st.warning("⚠️ API en ligne mais en mode dégradé.")
         else:
-            st.error(f"Erreur : {res}")
+            st.error("❌ API injoignable. (Vérifiez le déploiement Render)")
 
 with col2:
-    if st.button("Tester la Route (/health)"):
-        # On teste avec une limite de 1 pour ne pas charger le réseau
-        res = check_api(api_url, "/health?limit=1")
-        if isinstance(res, requests.Response) and res.status_code == 200:
-            st.success("Route health active !")
-        else:
-            st.warning("health non disponible ou route mal configurée.")
+    res = check_api(api_url, "/health")
+    if isinstance(res, requests.Response) and res.status_code == 200:
+        data = res.json()
+        st.success("API en ligne")
+        
+        # Affichage élégant des composants
+        arts = data.get("artifacts", {})
+        cols = st.columns(len(arts))
+        for i, (name, status) in enumerate(arts.items()):
+            cols[i].metric(label=name.capitalize(), value="✅" if status else "❌")
+    else:
+        st.error("L'API ne répond pas")
 # ============================================================
 # NAVIGATION
 # ============================================================
