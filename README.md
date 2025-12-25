@@ -258,7 +258,7 @@ Dashboard Interactif → https://clusteringanalytics-bykaderkouadio.streamlit.ap
 ## Contact
 Pour toute question ou collaboration, n’hésitez pas à me contacter :
 
-- **LinkedIn** : [Koukou Kader Kouadio](https://www.linkedin.com/in/koukou-kader-kouadio-2a32371a4/)
+- **LinkedIn** : [Koukou Kader Kouadio](https://www.linkedin.com/in/kouakou-kader-kouadio-2a32371a4/)
 - **Email** : [kkaderkouadio@gmail.com](mailto:kkaderkouadio@gmail.com)
 
 
